@@ -2,7 +2,11 @@ import pygame
 import sys
 import random
 import collections
+import time
 
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+OCEANBLUE = (112, 188, 255)
 
 class Battleship:
     def __init__(self, name: str, length: int, orientation: str) -> None:
@@ -104,14 +108,86 @@ class GameBoard:
         else:
             return 'You already hit this part of the ship.'
         
+
+    def display_message(self, message: str, center: bool = False, duration: int = 1):
+        font = pygame.font.Font(None, 36)
+        text = font.render(message, True, WHITE)
+        if center:
+            text_rect = text.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+        else:
+            text_rect = text.get_rect(center=(window_size[0] // 2, window_size[1] - 30))
+        screen.blit(text, text_rect)
+        pygame.display.flip()
+        time.sleep(duration)
         
-    def game_over(self) -> bool:
+        
+    def game_is_over(self) -> bool:
         for ship in self.ships_location:
-            if not ship.is_sunk:
-                return False
+            if isinstance(ship, Battleship):
+                if not ship.is_sunk:
+                    return False
         
         return True
 
 
 if __name__ == '__main__':
-    ...
+    pygame.init()
+
+    window_size = (600, 600)
+    screen = pygame.display.set_mode(window_size)
+    pygame.display.set_caption("Battleship Game")
+
+    game_board = GameBoard()
+
+    running = True
+    shots_remaining = 12
+    while running and shots_remaining > 0 and not game_board.game_is_over():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                clicked_col = (mouse_x - 10) // (window_size[0] // game_board.board_size)
+                clicked_row = (mouse_y - 10) // (window_size[1] // game_board.board_size)
+
+                result = game_board.attack(clicked_row, clicked_col)
+                game_board.display_message(result, True)
+                shots_remaining -= 1
+
+        for row_index, row in enumerate(game_board.board):
+            for col_index, cell in enumerate(row):
+                cell_color = OCEANBLUE
+                pygame.draw.rect(
+                    screen,
+                    cell_color,
+                    (
+                        col_index * (window_size[0] // game_board.board_size),
+                        row_index * (window_size[1] // game_board.board_size),
+                        (window_size[0] // game_board.board_size),
+                        (window_size[1] // game_board.board_size),
+                    ),
+                )
+
+                pygame.draw.rect(
+                    screen,
+                    BLACK,
+                    (
+                        col_index * (window_size[0] // game_board.board_size),
+                        row_index * (window_size[1] // game_board.board_size),
+                        window_size[0] // game_board.board_size,
+                        window_size[1] // game_board.board_size,
+                    ),
+                    3,  # Border thickness
+                )
+
+        game_board.display_message(f"Shots remaining: {shots_remaining}", duration=0.5)
+
+        pygame.display.flip()
+
+    result_message = "You won!" if game_board.game_is_over() else "You lost!"
+    game_board.display_message(result_message, True, duration=1)
+
+    pygame.quit()
+    sys.exit()
+
