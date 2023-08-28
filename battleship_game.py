@@ -18,6 +18,10 @@ class Battleship:
             self.is_sunk = True
 
 
+    def __str__(self):
+        return 'O'
+
+
 class GameBoard:
     def __init__(self, board_size: int = 7) -> None:
         """Note that board_size must be at least 3 to accommodate all ships
@@ -66,3 +70,48 @@ class GameBoard:
                 return False
         return True
     
+
+    def __str__(self):
+        board_str = ""
+        for row in self.board:
+            row_str = []
+            for item in row:
+                if isinstance(item, Battleship):
+                    row_str.append(str(item))
+                else:
+                    row_str.append(item)
+            board_str += " ".join(row_str) + "\n"
+        return board_str
+    
+
+    def attack(self, row: int, col: int) -> str:
+        target = self.board[row][col]
+        
+        if isinstance(target, Battleship):
+            ship_object = target
+            ship_cells = self.ships_location[ship_object]
+            ship_cells.remove((row, col))
+            self.board[row][col] = "X"
+            ship_object.hit()
+
+            if not ship_cells:
+                del self.ships_location[ship_object]
+                return f"Ship {ship_object.name} has sunk!"
+            else:
+                return f"You hit ship {ship_object.name}!"
+        elif target == '.':
+            return 'You missed!'
+        else:
+            return 'You already hit this part of the ship.'
+        
+        
+    def game_over(self) -> bool:
+        for ship in self.ships_location:
+            if not ship.is_sunk:
+                return False
+        
+        return True
+
+
+if __name__ == '__main__':
+    ...
